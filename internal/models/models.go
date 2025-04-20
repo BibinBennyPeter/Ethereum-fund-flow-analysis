@@ -1,8 +1,5 @@
 package models
 
-import (
-	"time"
-)
 
 // Transaction represents a single transaction in the response
 type Transaction struct {
