@@ -107,7 +107,7 @@ func (c *Client) GetERC721Transfers(address string) ([]models.ERC721Transfer, er
 }
 // GetERC1155Transfers fetches ERC-1155 token transfers for the given address
 func (c *Client) GetERC1155Transfers(address string) ([]models.ERC1155Transfer, error) {
-    endpoint := fmt.Sprintf("%s?chainid=1&module=account&action=token1155tx&address=%s&startblock=0&endblock=99999999&sort=asc&apikey=%s",
+    endpoint := fmt.Sprintf("%s?chainid=1&module=account&action=tokentx&address=%s&startblock=0&endblock=99999999&sort=asc&apikey=%s",
         c.baseURL, address, c.apiKey)
     
     var response models.EtherscanResponse

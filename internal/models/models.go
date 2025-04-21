@@ -137,7 +137,7 @@ type ERC1155Transfer struct {
 	TokenName         string  `json:"tokenName"`
 	TokenSymbol       string  `json:"tokenSymbol"`
 	TokenDecimal      uint8   `json:"tokenDecimal,string"`
-	TokenValue        uint8   `json:"tokenValue,string"`
+	TokenValue        *BigInt   `json:"tokenValue,string"`
 	TransactionIndex  int     `json:"transactionIndex,string"`
 	Gas               int     `json:"gas,string"`
 	GasPrice          *BigInt `json:"gasPrice"`
