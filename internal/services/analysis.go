@@ -261,3 +261,153 @@ func (s *AnalysisService) AnalyzeBeneficiaries(params AnalysisParams) ([]models.
     
 
 }
+
+// AnalyzePayers analyzes incoming transactions to identify payers.
+func (s *AnalysisService) AnalyzePayers(params AnalysisParams) ([]models.Payer, error) {
+	// Prepare Etherscan request parameters
+	req := etherscan.EtherscanRequestParams{
+		Address:    params.Address,
+		StartBlock: params.StartBlock,
+		EndBlock:   params.EndBlock,
+		Page:       params.Page,
+		Offset:     params.Offset,
+		Sort:       params.Sort,
+	}
+
+	// Fetch all transaction types
+	normalTxs, err := s.etherscanClient.GetNormalTransactions(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get normal transactions: %w", err)
+	}
+	internalTxs, err := s.etherscanClient.GetInternalTransactions(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get internal transactions: %w", err)
+	}
+	erc20Txs, err := s.etherscanClient.GetERC20Transfers(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token transfers: %w", err)
+	}
+	erc721Txs, err := s.etherscanClient.GetERC721Transfers(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token transfers: %w", err)
+	}
+	erc1155Txs, err := s.etherscanClient.GetERC1155Transfers(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token transfers: %w", err)
+	}
+
+	// Map to collect payers
+	payerMap := make(map[string]*models.Payer)
+
+	// Process normal incoming transactions
+	for _, tx := range normalTxs {
+		if !strings.EqualFold(tx.To, params.Address) || tx.IsError == 1 {
+			continue
+		}
+		// Convert wei to ether
+		valueWei := new(big.Int)
+		valueWei.SetString(tx.Value.String(), 10)
+		valueEther := new(big.Float).Quo(new(big.Float).SetInt(valueWei), big.NewFloat(weiToEther))
+		amount, _ := valueEther.Float64()
+
+		timestamp := tx.TimeStamp.Time().Unix()
+		dateTime := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
+
+		tran := models.Transaction{TxAmount: amount, DateTime: dateTime, TransactionID: tx.Hash}
+
+		if _, exists := payerMap[tx.From]; !exists {
+			payerMap[tx.From] = &models.Payer{Address: tx.From, Amount: 0, Transactions: []models.Transaction{}}
+		}
+		payerMap[tx.From].Amount += amount
+		payerMap[tx.From].Transactions = append(payerMap[tx.From].Transactions, tran)
+	}
+
+	// Process internal incoming transactions
+	for _, tx := range internalTxs {
+		if !strings.EqualFold(tx.To, params.Address) || tx.IsError == 1 {
+			continue
+		}
+		valueWei := new(big.Int)
+		valueWei.SetString(tx.Value.String(), 10)
+		valueEther := new(big.Float).Quo(new(big.Float).SetInt(valueWei), big.NewFloat(weiToEther))
+		amount, _ := valueEther.Float64()
+
+		timestamp := tx.TimeStamp.Time().Unix()
+		dateTime := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
+
+		tran := models.Transaction{TxAmount: amount, DateTime: dateTime, TransactionID: tx.Hash}
+
+		if _, exists := payerMap[tx.From]; !exists {
+			payerMap[tx.From] = &models.Payer{Address: tx.From, Amount: 0, Transactions: []models.Transaction{}}
+		}
+		payerMap[tx.From].Amount += amount
+		payerMap[tx.From].Transactions = append(payerMap[tx.From].Transactions, tran)
+	}
+
+	// Process ERC20 incoming transfers
+	for _, tx := range erc20Txs {
+		if !strings.EqualFold(tx.To, params.Address) {
+			continue
+		}
+    // Convert raw big-integer string to human amount
+		divisor := new(big.Float).SetFloat64(math.Pow10(int(tx.TokenDecimal)))
+		valueToken := new(big.Float)
+		valueToken.SetString(tx.Value.String())
+		amount, _ := new(big.Float).Quo(valueToken, divisor).Float64()
+
+		timestamp := tx.TimeStamp.Time().Unix()
+		dateTime := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
+
+		tran := models.Transaction{TxAmount: amount, DateTime: dateTime, TransactionID: tx.Hash}
+
+		if _, exists := payerMap[tx.From]; !exists {
+			payerMap[tx.From] = &models.Payer{Address: tx.From, Amount: 0, Transactions: []models.Transaction{}}
+		}
+		payerMap[tx.From].Transactions = append(payerMap[tx.From].Transactions, tran)
+	}
+
+	// Process ERC721 incoming transfers (NFTs)
+	for _, tx := range erc721Txs {
+		if !strings.EqualFold(tx.To, params.Address) {
+			continue
+		}
+		timestamp := tx.TimeStamp.Time().Unix()
+		dateTime := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
+		tran := models.Transaction{TxAmount: 1, DateTime: dateTime, TransactionID: tx.Hash}
+
+		if _, exists := payerMap[tx.From]; !exists {
+			payerMap[tx.From] = &models.Payer{Address: tx.From, Amount: 0, Transactions: []models.Transaction{}}
+		}
+		payerMap[tx.From].Transactions = append(payerMap[tx.From].Transactions, tran)
+	}
+
+	// Process ERC1155 incoming transfers
+	for _, tx := range erc1155Txs {
+		if !strings.EqualFold(tx.To, params.Address) {
+			continue
+		}
+
+		// Handle each ID/value pair
+		divisor := new(big.Float).SetFloat64(math.Pow10(int(tx.TokenDecimal)))
+		valueToken := new(big.Float)
+		valueToken.SetString(tx.TokenValue.String())
+		amount, _ := new(big.Float).Quo(valueToken, divisor).Float64()
+
+		timestamp := tx.TimeStamp.Time().Unix()
+		dateTime := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
+		tran := models.Transaction{TxAmount: amount, DateTime: dateTime, TransactionID: tx.Hash}
+
+		if _, exists := payerMap[tx.From]; !exists {
+			payerMap[tx.From] = &models.Payer{Address: tx.From, Amount: 0, Transactions: []models.Transaction{}}
+		}
+		payerMap[tx.From].Transactions = append(payerMap[tx.From].Transactions, tran)
+	}
+
+	// Convert map to slice
+	payers := make([]models.Payer, 0, len(payerMap))
+	for _, p := range payerMap {
+		payers = append(payers, *p)
+	}
+
+	return payers, nil
+}

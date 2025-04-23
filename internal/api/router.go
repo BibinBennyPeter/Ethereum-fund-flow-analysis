@@ -17,6 +17,7 @@ func SetupRouter(cfg *config.Config) http.Handler {
 	
 	// Register routes
 	mux.HandleFunc("/beneficiary", handler.BeneficiaryHandler)
+  mux.HandleFunc("/payer", handler.PayerHandler)
 	
 	// Add middleware for logging, CORS, etc.
 	return LoggingMiddleware(mux)
