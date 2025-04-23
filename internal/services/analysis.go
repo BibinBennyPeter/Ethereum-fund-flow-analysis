@@ -18,6 +18,17 @@ type AnalysisService struct {
 	etherscanClient *etherscan.Client
 }
 
+
+// AnalysisParams contains parameters for the beneficiary analysis
+type AnalysisParams struct {
+	Address     string
+	StartBlock  int64
+	EndBlock    int64
+	Page        int
+	Offset      int
+	Sort        string
+}
+
 // NewAnalysisService creates a new analysis service
 func NewAnalysisService(etherscanClient *etherscan.Client) *AnalysisService {
 	return &AnalysisService{
@@ -26,40 +37,49 @@ func NewAnalysisService(etherscanClient *etherscan.Client) *AnalysisService {
 }
 
 // AnalyzeBeneficiaries analyzes transactions to identify beneficiaries
-func (s *AnalysisService) AnalyzeBeneficiaries(address string) ([]models.Beneficiary, error) {
+func (s *AnalysisService) AnalyzeBeneficiaries(params AnalysisParams) ([]models.Beneficiary, error) {
+	// Prepare Etherscan request parameters
+	requestParams := etherscan.EtherscanRequestParams{
+		Address:    params.Address,
+		StartBlock: params.StartBlock,
+		EndBlock:   params.EndBlock,
+		Page:       params.Page,
+		Offset:     params.Offset,
+		Sort:       params.Sort,
+	}
+
 	// Get all transaction types
-	normalTxs, err := s.etherscanClient.GetNormalTransactions(address)
+	normalTxs, err := s.etherscanClient.GetNormalTransactions(requestParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get normal transactions: %w", err)
 	}
 
-	internalTxs, err := s.etherscanClient.GetInternalTransactions(address)
+	internalTxs, err := s.etherscanClient.GetInternalTransactions(requestParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get internal transactions: %w", err)
 	}
 
-	erc20Txs, err := s.etherscanClient.GetERC20Transfers(address)
+	erc20Txs, err := s.etherscanClient.GetERC20Transfers(requestParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token transfers: %w", err)
 	}
 
-  erc721Txs, err := s.etherscanClient.GetERC721Transfers(address)
+	erc721Txs, err := s.etherscanClient.GetERC721Transfers(requestParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token transfers: %w", err)
 	}
 
-  erc1155Txs, err := s.etherscanClient.GetERC1155Transfers(address)
+	erc1155Txs, err := s.etherscanClient.GetERC1155Transfers(requestParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token transfers: %w", err)
 	}
 
-  // Create a map to collect beneficiaries
+	// Create a map to collect beneficiaries
 	beneficiaryMap := make(map[string]*models.Beneficiary)
-
-  // Process normal transactions
+	// Process normal transactions
 	for _, tx := range normalTxs {
 		// Only consider outgoing transactions from our address
-		if !strings.EqualFold(tx.From,  address) || tx.IsError == 1 {
+		if !strings.EqualFold(tx.From, params.Address) || tx.IsError == 1 {
 			continue
 		}
 
@@ -80,7 +100,7 @@ func (s *AnalysisService) AnalyzeBeneficiaries(address string) ([]models.Benefic
 			TransactionID: tx.Hash,
 		}
 
-    // Add to beneficiary map
+		// Add to beneficiary map
 		if _, exists := beneficiaryMap[beneficiaryAddress]; !exists {
 			beneficiaryMap[beneficiaryAddress] = &models.Beneficiary{
 				Address:      beneficiaryAddress,
@@ -94,10 +114,11 @@ func (s *AnalysisService) AnalyzeBeneficiaries(address string) ([]models.Benefic
 			beneficiaryMap[beneficiaryAddress].Transactions, 
 			transaction,
 		)
-  }
-	// Process internal transactions
+	}
+
+	// Process internal transactions (same logic as above)
 	for _, tx := range internalTxs {
-		if !strings.EqualFold(tx.From, address) || tx.IsError == 1 {
+		if !strings.EqualFold(tx.From, params.Address) || tx.IsError == 1 {
 			continue
 		}
 
@@ -132,106 +153,103 @@ func (s *AnalysisService) AnalyzeBeneficiaries(address string) ([]models.Benefic
 		)
 	}
 
+	// Process ERC20 transfers
+	for _, tx := range erc20Txs {
+		if !strings.EqualFold(tx.From, params.Address) {
+			continue
+		}
 
-  for _, tx := range erc20Txs {
-    if !strings.EqualFold(tx.From, address) {
-        continue
-    }
-
-    // Convert raw big‑integer string to human amount
-    divisor := new(big.Float).SetFloat64(math.Pow10(int(tx.TokenDecimal)))
-    valueToken := new(big.Float)
-    valueToken.SetString(tx.Value.String())
-    amount, _ := new(big.Float).Quo(valueToken, divisor).Float64()
-
-
-		timestamp := tx.TimeStamp.Time().Unix()
-		dateTime := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
-
-    transaction := models.Transaction{
-        TxAmount:      amount,
-        DateTime:      dateTime,
-        TransactionID: tx.Hash,
-    }
-
-    if _, ok := beneficiaryMap[tx.To]; !ok {
-        beneficiaryMap[tx.To] = &models.Beneficiary{
-            Address:      tx.To,
-            Amount:       0,
-            Transactions: []models.Transaction{},
-        }
-    }
-
-    // For token transfers, we don't add to the ETH amount
-    beneficiaryMap[tx.To].Transactions = append(
-        beneficiaryMap[tx.To].Transactions,
-        transaction,
-    )
-  }
-
-
-  for _, tx := range erc721Txs {
-    if !strings.EqualFold(tx.From, address) {
-        continue
-    }
+		// Convert raw big-integer string to human amount
+		divisor := new(big.Float).SetFloat64(math.Pow10(int(tx.TokenDecimal)))
+		valueToken := new(big.Float)
+		valueToken.SetString(tx.Value.String())
+		amount, _ := new(big.Float).Quo(valueToken, divisor).Float64()
 
 		timestamp := tx.TimeStamp.Time().Unix()
 		dateTime := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
 
+		transaction := models.Transaction{
+			TxAmount:      amount,
+			DateTime:      dateTime,
+			TransactionID: tx.Hash,
+		}
 
-    transaction := models.Transaction{
-        TxAmount:      1,           // NFTs always transfer one
-        DateTime:      dateTime,
-        TransactionID: tx.Hash,
-    }
+		if _, ok := beneficiaryMap[tx.To]; !ok {
+			beneficiaryMap[tx.To] = &models.Beneficiary{
+				Address:      tx.To,
+				Amount:       0,
+				Transactions: []models.Transaction{},
+			}
+		}
 
-    if _, ok := beneficiaryMap[tx.To]; !ok {
-        beneficiaryMap[tx.To] = &models.Beneficiary{
-            Address:      tx.To,
-            Amount:       0,
-            Transactions: []models.Transaction{},
-        }
-    }
-    beneficiaryMap[tx.To].Transactions = append(
-        beneficiaryMap[tx.To].Transactions,
-        transaction,
-    )
-  }
+		// For token transfers, we don't add to the ETH amount
+		beneficiaryMap[tx.To].Transactions = append(
+			beneficiaryMap[tx.To].Transactions,
+			transaction,
+		)
+	}
 
-
-  for _, tx := range erc1155Txs {
-    if !strings.EqualFold(tx.From, address) {
-        continue
-    }
-
-    // Handle each ID/value pair (here single per event)
-    divisor := new(big.Float).SetFloat64(math.Pow10(int(tx.TokenDecimal)))
-    valueToken := new(big.Float)
-    valueToken.SetString(tx.TokenValue.String())
-    amount, _ := new(big.Float).Quo(valueToken, divisor).Float64()
+	// Process ERC721 transfers (NFTs)
+	for _, tx := range erc721Txs {
+		if !strings.EqualFold(tx.From, params.Address) {
+			continue
+		}
 
 		timestamp := tx.TimeStamp.Time().Unix()
 		dateTime := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
 
+		transaction := models.Transaction{
+			TxAmount:      1, // NFTs always transfer one
+			DateTime:      dateTime,
+			TransactionID: tx.Hash,
+		}
 
-    transaction := models.Transaction{
-        TxAmount:      amount,
-        DateTime:      dateTime,
-        TransactionID: tx.Hash,
-    }
+		if _, ok := beneficiaryMap[tx.To]; !ok {
+			beneficiaryMap[tx.To] = &models.Beneficiary{
+				Address:      tx.To,
+				Amount:       0,
+				Transactions: []models.Transaction{},
+			}
+		}
+		beneficiaryMap[tx.To].Transactions = append(
+			beneficiaryMap[tx.To].Transactions,
+			transaction,
+		)
+	}
 
-    if _, ok := beneficiaryMap[tx.To]; !ok {
-        beneficiaryMap[tx.To] = &models.Beneficiary{
-            Address:      tx.To,
-            Amount:       0,
-            Transactions: []models.Transaction{},
-        }
-    }
-    beneficiaryMap[tx.To].Transactions = append(
-        beneficiaryMap[tx.To].Transactions,
-        transaction,
-    )
-  }
+	// Process ERC1155 transfers
+	for _, tx := range erc1155Txs {
+		if !strings.EqualFold(tx.From, params.Address) {
+			continue
+		}
+
+		// Handle each ID/value pair
+		divisor := new(big.Float).SetFloat64(math.Pow10(int(tx.TokenDecimal)))
+		valueToken := new(big.Float)
+		valueToken.SetString(tx.TokenValue.String())
+		amount, _ := new(big.Float).Quo(valueToken, divisor).Float64()
+
+		timestamp := tx.TimeStamp.Time().Unix()
+		dateTime := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
+
+		transaction := models.Transaction{
+			TxAmount:      amount,
+			DateTime:      dateTime,
+			TransactionID: tx.Hash,
+		}
+
+		if _, ok := beneficiaryMap[tx.To]; !ok {
+			beneficiaryMap[tx.To] = &models.Beneficiary{
+				Address:      tx.To,
+				Amount:       0,
+				Transactions: []models.Transaction{},
+			}
+		}
+		beneficiaryMap[tx.To].Transactions = append(
+			beneficiaryMap[tx.To].Transactions,
+			transaction,
+		)
+	}
 
   // Convert map to slice
   beneficiaries := make([]models.Beneficiary, 0, len(beneficiaryMap))
