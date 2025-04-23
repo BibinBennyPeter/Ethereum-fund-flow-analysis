@@ -1,4 +1,4 @@
-package etherscan
+package client
 
 import (
 	"encoding/json"

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"Ethereum-fund-flow-analysis/internal/etherscan"
+	"Ethereum-fund-flow-analysis/internal/client"
 	"Ethereum-fund-flow-analysis/internal/models"
 )
 
@@ -15,7 +15,7 @@ const weiToEther = 1e18
 
 // AnalysisService handles the transaction analysis logic
 type AnalysisService struct {
-	etherscanClient *etherscan.Client
+	etherscanClient *client.Client
 }
 
 // AnalysisParams contains parameters for the beneficiary analysis
@@ -29,7 +29,7 @@ type AnalysisParams struct {
 }
 
 // NewAnalysisService creates a new analysis service
-func NewAnalysisService(etherscanClient *etherscan.Client) *AnalysisService {
+func NewAnalysisService(etherscanClient *client.Client) *AnalysisService {
 	return &AnalysisService{
 		etherscanClient: etherscanClient,
 	}
@@ -38,7 +38,7 @@ func NewAnalysisService(etherscanClient *etherscan.Client) *AnalysisService {
 // AnalyzeBeneficiaries analyzes transactions to identify beneficiaries
 func (s *AnalysisService) AnalyzeBeneficiaries(params AnalysisParams) ([]models.Beneficiary, error) {
 	// Prepare Etherscan request parameters
-	requestParams := etherscan.EtherscanRequestParams{
+	requestParams := client.EtherscanRequestParams{
 		Address:    params.Address,
 		StartBlock: params.StartBlock,
 		EndBlock:   params.EndBlock,
@@ -263,7 +263,7 @@ func (s *AnalysisService) AnalyzeBeneficiaries(params AnalysisParams) ([]models.
 // AnalyzePayers analyzes incoming transactions to identify payers.
 func (s *AnalysisService) AnalyzePayers(params AnalysisParams) ([]models.Payer, error) {
 	// Prepare Etherscan request parameters
-	req := etherscan.EtherscanRequestParams{
+	req := client.EtherscanRequestParams{
 		Address:    params.Address,
 		StartBlock: params.StartBlock,
 		EndBlock:   params.EndBlock,

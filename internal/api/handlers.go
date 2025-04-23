@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"Ethereum-fund-flow-analysis/internal/client"
 	"Ethereum-fund-flow-analysis/internal/config"
-	"Ethereum-fund-flow-analysis/internal/etherscan"
 	"Ethereum-fund-flow-analysis/internal/models"
 	"Ethereum-fund-flow-analysis/internal/services"
 )
@@ -22,7 +22,7 @@ type Handler struct {
 
 // NewHandler creates a new API handler
 func NewHandler(cfg *config.Config) *Handler {
-	etherscanClient := etherscan.NewClient(cfg.EtherscanBaseURL, cfg.EtherscanAPIKey)
+	etherscanClient := client.NewClient(cfg.EtherscanBaseURL, cfg.EtherscanAPIKey)
 	analysisService := service.NewAnalysisService(etherscanClient)
 
 	return &Handler{
