@@ -1,11 +1,10 @@
 package models
 
-
 // Transaction represents a single transaction in the response
 type Transaction struct {
-	TxAmount      float64   `json:"tx_amount"`
-	DateTime      string    `json:"date_time"`
-	TransactionID string    `json:"transaction_id"`
+	TxAmount      float64 `json:"tx_amount"`
+	DateTime      string  `json:"date_time"`
+	TransactionID string  `json:"transaction_id"`
 }
 
 // Beneficiary represents a single beneficiary with all related transactions
@@ -33,7 +32,6 @@ type PayerResponse struct {
 	Message string  `json:"message"`
 	Data    []Payer `json:"data"`
 }
-
 
 // NormalTx holds info from normal tx query
 type NormalTx struct {
@@ -137,7 +135,7 @@ type ERC1155Transfer struct {
 	TokenName         string  `json:"tokenName"`
 	TokenSymbol       string  `json:"tokenSymbol"`
 	TokenDecimal      uint8   `json:"tokenDecimal,string"`
-	TokenValue        *BigInt   `json:"tokenValue,string"`
+	TokenValue        *BigInt `json:"tokenValue,string"`
 	TransactionIndex  int     `json:"transactionIndex,string"`
 	Gas               int     `json:"gas,string"`
 	GasPrice          *BigInt `json:"gasPrice"`
@@ -146,7 +144,6 @@ type ERC1155Transfer struct {
 	Input             string  `json:"input"`
 	Confirmations     int     `json:"confirmations,string"`
 }
-
 
 // EtherscanResponse is the generic response structure from Etherscan API
 type EtherscanResponse struct {

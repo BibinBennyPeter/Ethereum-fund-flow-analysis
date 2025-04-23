@@ -11,14 +11,14 @@ import (
 func SetupRouter(cfg *config.Config) http.Handler {
 	// Create a new handler with required services
 	handler := NewHandler(cfg)
-	
+
 	// Create a new router
 	mux := http.NewServeMux()
-	
+
 	// Register routes
 	mux.HandleFunc("/beneficiary", handler.BeneficiaryHandler)
-  mux.HandleFunc("/payer", handler.PayerHandler)
-	
+	mux.HandleFunc("/payer", handler.PayerHandler)
+
 	// Add middleware for logging, CORS, etc.
 	return LoggingMiddleware(mux)
 }
@@ -31,7 +31,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		// you might want to use a more sophisticated logging package
 		// like Zap or Logrus
 		log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL)
-		
+
 		// Call the next handler
 		next.ServeHTTP(w, r)
 	})

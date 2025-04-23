@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 	"math"
-  "strings"
 	"math/big"
+	"strings"
 	"time"
 
 	"Ethereum-fund-flow-analysis/internal/etherscan"
@@ -18,15 +18,14 @@ type AnalysisService struct {
 	etherscanClient *etherscan.Client
 }
 
-
 // AnalysisParams contains parameters for the beneficiary analysis
 type AnalysisParams struct {
-	Address     string
-	StartBlock  int64
-	EndBlock    int64
-	Page        int
-	Offset      int
-	Sort        string
+	Address    string
+	StartBlock int64
+	EndBlock   int64
+	Page       int
+	Offset     int
+	Sort       string
 }
 
 // NewAnalysisService creates a new analysis service
@@ -84,7 +83,7 @@ func (s *AnalysisService) AnalyzeBeneficiaries(params AnalysisParams) ([]models.
 		}
 
 		beneficiaryAddress := tx.To
-		
+
 		// Parse value in wei to ether
 		valueWei := new(big.Int)
 		valueWei.SetString(tx.Value.String(), 10)
@@ -108,10 +107,10 @@ func (s *AnalysisService) AnalyzeBeneficiaries(params AnalysisParams) ([]models.
 				Transactions: []models.Transaction{},
 			}
 		}
-		
+
 		beneficiaryMap[beneficiaryAddress].Amount += amount
 		beneficiaryMap[beneficiaryAddress].Transactions = append(
-			beneficiaryMap[beneficiaryAddress].Transactions, 
+			beneficiaryMap[beneficiaryAddress].Transactions,
 			transaction,
 		)
 	}
@@ -123,7 +122,7 @@ func (s *AnalysisService) AnalyzeBeneficiaries(params AnalysisParams) ([]models.
 		}
 
 		beneficiaryAddress := tx.To
-		
+
 		valueWei := new(big.Int)
 		valueWei.SetString(tx.Value.String(), 10)
 		valueEther := new(big.Float).Quo(new(big.Float).SetInt(valueWei), big.NewFloat(weiToEther))
@@ -145,10 +144,10 @@ func (s *AnalysisService) AnalyzeBeneficiaries(params AnalysisParams) ([]models.
 				Transactions: []models.Transaction{},
 			}
 		}
-		
+
 		beneficiaryMap[beneficiaryAddress].Amount += amount
 		beneficiaryMap[beneficiaryAddress].Transactions = append(
-			beneficiaryMap[beneficiaryAddress].Transactions, 
+			beneficiaryMap[beneficiaryAddress].Transactions,
 			transaction,
 		)
 	}
@@ -251,14 +250,13 @@ func (s *AnalysisService) AnalyzeBeneficiaries(params AnalysisParams) ([]models.
 		)
 	}
 
-  // Convert map to slice
-  beneficiaries := make([]models.Beneficiary, 0, len(beneficiaryMap))
-    for _, ben := range beneficiaryMap {
-        beneficiaries = append(beneficiaries, *ben)
-    }
+	// Convert map to slice
+	beneficiaries := make([]models.Beneficiary, 0, len(beneficiaryMap))
+	for _, ben := range beneficiaryMap {
+		beneficiaries = append(beneficiaries, *ben)
+	}
 
-    return beneficiaries, nil
-    
+	return beneficiaries, nil
 
 }
 
@@ -349,7 +347,7 @@ func (s *AnalysisService) AnalyzePayers(params AnalysisParams) ([]models.Payer, 
 		if !strings.EqualFold(tx.To, params.Address) {
 			continue
 		}
-    // Convert raw big-integer string to human amount
+		// Convert raw big-integer string to human amount
 		divisor := new(big.Float).SetFloat64(math.Pow10(int(tx.TokenDecimal)))
 		valueToken := new(big.Float)
 		valueToken.SetString(tx.Value.String())

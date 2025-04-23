@@ -2,12 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
-  "errors"
 
 	"Ethereum-fund-flow-analysis/internal/config"
 	"Ethereum-fund-flow-analysis/internal/etherscan"
@@ -24,7 +24,7 @@ type Handler struct {
 func NewHandler(cfg *config.Config) *Handler {
 	etherscanClient := etherscan.NewClient(cfg.EtherscanBaseURL, cfg.EtherscanAPIKey)
 	analysisService := service.NewAnalysisService(etherscanClient)
-	
+
 	return &Handler{
 		analysisService: analysisService,
 	}
@@ -56,9 +56,9 @@ func parseQueryParams(r *http.Request) (FilterAndSortParams, error) {
 		MinAmount:   0,
 		MaxAmount:   -1, // Negative value means no maximum limit
 		StartBlock:  0,
-		EndBlock:    -1, // Negative value means no end block limit
-		Page:        1,  // Default to first page
-		Offset:      100, // Default to 100 transactions per page
+		EndBlock:    -1,       // Negative value means no end block limit
+		Page:        1,        // Default to first page
+		Offset:      100,      // Default to 100 transactions per page
 		SortBy:      "amount", // Default sort by amount
 		Sort:        "desc",   // Default sort order is descending
 		Limit:       100,      // Default limit is 100 results
@@ -182,20 +182,20 @@ func (h *Handler) BeneficiaryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	
+
 	// Parse filter and sort parameters
 	params, err := parseQueryParams(r)
 	if err != nil {
 		http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	
+
 	// Get the Ethereum address from query parameters
 	if params.Address == "" {
 		http.Error(w, "Address parameter is required", http.StatusBadRequest)
 		return
 	}
-	
+
 	// Validate the Ethereum address
 	if err := validateAddress(params.Address); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -219,16 +219,16 @@ func (h *Handler) BeneficiaryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to analyze beneficiaries", http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Apply filtering and sorting
 	filteredBeneficiaries := filterBeneficiaries(beneficiaries, params)
-	
+
 	// Create the response
 	response := models.BeneficiaryResponse{
 		Message: "success",
 		Data:    filteredBeneficiaries,
 	}
-	
+
 	// Send JSON response
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -245,20 +245,20 @@ func (h *Handler) PayerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	
+
 	// Parse filter and sort parameters
 	params, err := parseQueryParams(r)
 	if err != nil {
 		http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	
+
 	// Get the Ethereum address from query parameters
 	if params.Address == "" {
 		http.Error(w, "Address parameter is required", http.StatusBadRequest)
 		return
 	}
-	
+
 	// Validate the Ethereum address
 	if err := validateAddress(params.Address); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -282,16 +282,16 @@ func (h *Handler) PayerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to analyze payers", http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Apply filtering and sorting
 	filteredPayers := filterPayers(payers, params)
-	
+
 	// Create the response
 	response := models.PayerResponse{
 		Message: "success",
 		Data:    filteredPayers,
 	}
-	
+
 	// Send JSON response
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -304,7 +304,7 @@ func (h *Handler) PayerHandler(w http.ResponseWriter, r *http.Request) {
 // filterBeneficiaries applies filtering and sorting to beneficiaries based on the params
 func filterBeneficiaries(beneficiaries []models.Beneficiary, params FilterAndSortParams) []models.Beneficiary {
 	filtered := []models.Beneficiary{}
-	
+
 	// Apply filters
 	for _, ben := range beneficiaries {
 		// Skip beneficiaries with zero amount if not explicitly requested
@@ -340,14 +340,14 @@ func filterBeneficiaries(beneficiaries []models.Beneficiary, params FilterAndSor
 	if len(filtered) > params.Limit {
 		filtered = filtered[:params.Limit]
 	}
-	
+
 	return filtered
 }
 
 // filterPayers applies filtering and sorting to payers based on the params
 func filterPayers(payers []models.Payer, params FilterAndSortParams) []models.Payer {
 	filtered := []models.Payer{}
-	
+
 	// Apply filters
 	for _, payer := range payers {
 		// Skip payers with zero amount if not explicitly requested
@@ -383,6 +383,6 @@ func filterPayers(payers []models.Payer, params FilterAndSortParams) []models.Pa
 	if len(filtered) > params.Limit {
 		filtered = filtered[:params.Limit]
 	}
-	
+
 	return filtered
 }

@@ -1,10 +1,10 @@
 package models
 
 import (
-  "math/big"
-  "strconv"
-  "time"
-  "fmt"
+	"fmt"
+	"math/big"
+	"strconv"
+	"time"
 )
 
 // BigInt is a wrapper over big.Int to implement only unmarshalText
@@ -34,26 +34,26 @@ func (b *BigInt) Int() *big.Int {
 }
 
 func (b *BigInt) String() string {
-    return b.Int().String()
+	return b.Int().String()
 }
 
 func (b *BigInt) SetString(s string, base int) error {
-    i, ok := new(big.Int).SetString(s, base)
-    if !ok {
-        return fmt.Errorf("invalid big.Int string: %s", s)
-    }
-    *b = BigInt(*i)
-    return nil
+	i, ok := new(big.Int).SetString(s, base)
+	if !ok {
+		return fmt.Errorf("invalid big.Int string: %s", s)
+	}
+	*b = BigInt(*i)
+	return nil
 }
 
 func (b *BigInt) ToInt64() (int64, error) {
-    return b.Int().Int64(), nil // optional: check for overflow
+	return b.Int().Int64(), nil // optional: check for overflow
 }
 
 func (b *BigInt) Clone() *BigInt {
-    cloned := new(big.Int).Set(b.Int())
-    bb := BigInt(*cloned)
-    return &bb
+	cloned := new(big.Int).Set(b.Int())
+	bb := BigInt(*cloned)
+	return &bb
 }
 
 // Time is a wrapper over big.Int to implement only unmarshalText
@@ -85,17 +85,17 @@ func (t Time) MarshalText() (text []byte, err error) {
 }
 
 func (t *Time) SetUnix(unix int64) {
-    *t = Time(time.Unix(unix, 0))
+	*t = Time(time.Unix(unix, 0))
 }
 
 func (t Time) After(other Time) bool {
-    return t.Time().After(other.Time())
+	return t.Time().After(other.Time())
 }
 
 func (t Time) Before(other Time) bool {
-    return t.Time().Before(other.Time())
+	return t.Time().Before(other.Time())
 }
 
 func (t Time) IsZero() bool {
-    return t.Time().IsZero()
+	return t.Time().IsZero()
 }
