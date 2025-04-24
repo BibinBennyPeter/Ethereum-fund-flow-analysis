@@ -57,7 +57,7 @@ GET /beneficiary?address=0x2e5eF37Ade8afb712B8Be858fEc7389Fe32857e2&start_block=
 3. **Install dependencies & build**:
    ```bash
    go mod tidy
-   go build -o ethereum-fund-analysis ./cmd
+   go build -o ethereum-fund-analysis ./cmd/api/main.go
    ```
 
 4. **Run the server** (default listens on `:8080`):
