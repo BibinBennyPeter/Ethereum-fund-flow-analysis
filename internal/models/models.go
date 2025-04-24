@@ -31,6 +31,13 @@ type Payer struct {
 	Transactions []Transaction `json:"transactions"`
 }
 
+// EntityWithTransactions is a common interface for both Beneficiary and Payer
+type EntityWithTransactions struct {
+	Address      string
+	Amount       float64
+	Transactions []Transaction
+}
+
 // PayerResponse is the complete response for the /payer endpoint
 type PayerResponse struct {
 	Message string  `json:"message"`
