@@ -235,7 +235,7 @@ func (h httpHelper) respondWithJSON(w http.ResponseWriter, data interface{}) {
 // BeneficiaryHandler handles requests to the /beneficiary endpoint
 func (h *Handler) BeneficiaryHandler(w http.ResponseWriter, r *http.Request) {
 	helper := httpHelper{}
-	
+
 	// Validate HTTP method
 	if !helper.ensureMethod(w, r, http.MethodGet) {
 		return
@@ -271,7 +271,7 @@ func (h *Handler) BeneficiaryHandler(w http.ResponseWriter, r *http.Request) {
 // PayerHandler handles requests to the /payer endpoint
 func (h *Handler) PayerHandler(w http.ResponseWriter, r *http.Request) {
 	helper := httpHelper{}
-	
+
 	// Validate HTTP method
 	if !helper.ensureMethod(w, r, http.MethodGet) {
 		return

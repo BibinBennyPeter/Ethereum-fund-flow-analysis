@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"Ethereum-fund-flow-analysis/internal/models"
-  "Ethereum-fund-flow-analysis/internal/utils"
+	"Ethereum-fund-flow-analysis/internal/utils"
 )
 
 // ProcessTransactions processes all transaction types into either beneficiaries or payers
@@ -36,11 +36,11 @@ func ProcessTransactions(address string, txCollection TransactionCollection, isO
 
 		// Convert value
 		amount := utils.ConvertWeiToEther(tx.Value.String())
-		
+
 		// Create transaction record
 		timestamp := tx.TimeStamp.Time().Unix()
 		dateTime := utils.FormatTimestamp(timestamp)
-		
+
 		transaction := models.Transaction{
 			TxAmount:      amount,
 			DateTime:      dateTime,

@@ -20,9 +20,9 @@ type TransactionCollection struct {
 
 // FetchTask defines a generic transaction fetch operation
 type FetchTask[T any] struct {
-	Name     string                                                                  // Name of the transaction type for error reporting
-	Fetcher  func(params client.EtherscanRequestParams) ([]T, error)                 // Function to fetch transactions
-	Assigner func(collection *TransactionCollection, result []T)                     // Function to assign results to the collection
+	Name     string                                                  // Name of the transaction type for error reporting
+	Fetcher  func(params client.EtherscanRequestParams) ([]T, error) // Function to fetch transactions
+	Assigner func(collection *TransactionCollection, result []T)     // Function to assign results to the collection
 }
 
 // FetchAllTransactions concurrently fetches all transaction types for an address
@@ -80,7 +80,7 @@ func FetchAllTransactions(ethClient *client.Client, params client.EtherscanReque
 	// Execute all fetch tasks concurrently
 	for _, task := range fetchTasks {
 		wg.Add(1)
-		
+
 		// Use type assertions to handle different transaction types
 		switch t := task.(type) {
 		case FetchTask[models.NormalTx]:
@@ -116,19 +116,19 @@ func executeTask[T any](
 	task FetchTask[T],
 ) {
 	defer wg.Done()
-	
+
 	// Execute the fetch operation
 	txs, err := task.Fetcher(params)
-	
+
 	// Safely update the result collection
 	mu.Lock()
 	defer mu.Unlock()
-	
+
 	if err != nil {
 		result.Errors = append(result.Errors, fmt.Errorf("%s: %w", task.Name, err))
 		return
 	}
-	
+
 	// Assign results to the appropriate field in the collection
 	task.Assigner(result, txs)
 }
