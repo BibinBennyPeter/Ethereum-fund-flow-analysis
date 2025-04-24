@@ -175,35 +175,45 @@ func validateAddress(address string) error {
 	return nil
 }
 
-// BeneficiaryHandler handles requests to the /beneficiary endpoint
-func (h *Handler) BeneficiaryHandler(w http.ResponseWriter, r *http.Request) {
-	// Only allow GET requests
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+// httpHelper contains common HTTP handler operations
+type httpHelper struct{}
 
+// ensureMethod ensures the request uses the allowed HTTP method
+func (h httpHelper) ensureMethod(w http.ResponseWriter, r *http.Request, method string) bool {
+	if r.Method != method {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return false
+	}
+	return true
+}
+
+// getValidParams extracts and validates params and address
+func (h httpHelper) getValidParams(w http.ResponseWriter, r *http.Request) (FilterAndSortParams, bool) {
 	// Parse filter and sort parameters
 	params, err := parseQueryParams(r)
 	if err != nil {
 		http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
-		return
+		return params, false
 	}
 
-	// Get the Ethereum address from query parameters
+	// Check address presence
 	if params.Address == "" {
 		http.Error(w, "Address parameter is required", http.StatusBadRequest)
-		return
+		return params, false
 	}
 
 	// Validate the Ethereum address
 	if err := validateAddress(params.Address); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return params, false
 	}
 
-	// Prepare analysis parameters
-	analysisParams := service.AnalysisParams{
+	return params, true
+}
+
+// toAnalysisParams converts HTTP params to service params
+func (h httpHelper) toAnalysisParams(params FilterAndSortParams) service.AnalysisParams {
+	return service.AnalysisParams{
 		Address:    params.Address,
 		StartBlock: params.StartBlock,
 		EndBlock:   params.EndBlock,
@@ -211,9 +221,34 @@ func (h *Handler) BeneficiaryHandler(w http.ResponseWriter, r *http.Request) {
 		Offset:     params.Offset,
 		Sort:       params.Sort,
 	}
+}
+
+// respondWithJSON sends a JSON response
+func (h httpHelper) respondWithJSON(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
+}
+
+// BeneficiaryHandler handles requests to the /beneficiary endpoint
+func (h *Handler) BeneficiaryHandler(w http.ResponseWriter, r *http.Request) {
+	helper := httpHelper{}
+	
+	// Validate HTTP method
+	if !helper.ensureMethod(w, r, http.MethodGet) {
+		return
+	}
+
+	// Parse and validate parameters
+	params, ok := helper.getValidParams(w, r)
+	if !ok {
+		return
+	}
 
 	// Get beneficiaries from the service
-	beneficiaries, err := h.analysisService.AnalyzeBeneficiaries(analysisParams)
+	beneficiaries, err := h.analysisService.AnalyzeBeneficiaries(helper.toAnalysisParams(params))
 	if err != nil {
 		log.Printf("Error analyzing beneficiaries: %v", err)
 		http.Error(w, "Failed to analyze beneficiaries", http.StatusInternalServerError)
@@ -230,53 +265,26 @@ func (h *Handler) BeneficiaryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send JSON response
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Printf("Error encoding response: %v", err)
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
+	helper.respondWithJSON(w, response)
 }
 
 // PayerHandler handles requests to the /payer endpoint
 func (h *Handler) PayerHandler(w http.ResponseWriter, r *http.Request) {
-	// Only allow GET requests
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	helper := httpHelper{}
+	
+	// Validate HTTP method
+	if !helper.ensureMethod(w, r, http.MethodGet) {
 		return
 	}
 
-	// Parse filter and sort parameters
-	params, err := parseQueryParams(r)
-	if err != nil {
-		http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
+	// Parse and validate parameters
+	params, ok := helper.getValidParams(w, r)
+	if !ok {
 		return
-	}
-
-	// Get the Ethereum address from query parameters
-	if params.Address == "" {
-		http.Error(w, "Address parameter is required", http.StatusBadRequest)
-		return
-	}
-
-	// Validate the Ethereum address
-	if err := validateAddress(params.Address); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Prepare analysis parameters
-	analysisParams := service.AnalysisParams{
-		Address:    params.Address,
-		StartBlock: params.StartBlock,
-		EndBlock:   params.EndBlock,
-		Page:       params.Page,
-		Offset:     params.Offset,
-		Sort:       params.Sort,
 	}
 
 	// Get payers from the service
-	payers, err := h.analysisService.AnalyzePayers(analysisParams)
+	payers, err := h.analysisService.AnalyzePayers(helper.toAnalysisParams(params))
 	if err != nil {
 		log.Printf("Error analyzing payers: %v", err)
 		http.Error(w, "Failed to analyze payers", http.StatusInternalServerError)
@@ -293,12 +301,7 @@ func (h *Handler) PayerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send JSON response
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Printf("Error encoding response: %v", err)
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
+	helper.respondWithJSON(w, response)
 }
 
 // filterBeneficiaries applies filtering and sorting to beneficiaries based on the params
