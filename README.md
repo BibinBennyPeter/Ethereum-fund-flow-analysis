@@ -76,11 +76,5 @@ You can visualize flows using Arkham’s tracer:
 https://intel.arkm.com/tracer?address=<target_address>
 ```
 
-## License
-
-This project is licensed under MIT. See [LICENSE](LICENSE) for details.
-
----
-
 *Happy fund‐flow analyzing!*
 
