@@ -7,7 +7,7 @@ _Ethereum Fund Flow Analysis_ is a Go-based project that leverages the Etherscan
 - **Beneficiary (/beneficiary)**: Identify final recipients (outflow) of funds sent by a target address.
 - **Payer (/payer)**: Determine sources (inflow) of funds received by a target address.
 - **Flexible Fetch Filtering**: Use Etherscan query parameters (block range, pagination, sort order) to limit which transactions are fetched:
-  - `address`, `start_block`, `end_block`, `page`, `offset`, `sort` (asc|desc)
+  - `address`, `sblock`, `eblock`, `page`, `offset`, `sort` (asc|desc)
   - Example: `?address=0x123...&start_block=12000000&end_block=12001000&page=1&offset=50&sort=asc`
 - **Custom Post-Fetch Filters**: Further refine results in‑memory by transaction amount, zero‑value inclusion, sorting, and limit:
   - `min` (min amount), `max` (max amount), `limit` (max results), `with_zero_txs` (true|false)
@@ -25,8 +25,8 @@ _Ethereum Fund Flow Analysis_ is a Go-based project that leverages the Etherscan
 **Common Query Parameters**:
 ```
 address        (string, required)    // target Ethereum address
-start_block    (int64, optional)     // default 0
-end_block      (int64, optional)     // default -1 (no limit)
+sblock         (int64, optional)     // block number to start searching for transactions, default 0
+eblock         (int64, optional)     // block number to stop searching for transactions, default -1 (no limit)
 page           (int,   optional)     // default 1
 offset         (int,   optional)     // default 100
 sort           (string,optional)     // "asc" or "desc", default "desc"
@@ -38,7 +38,7 @@ with_zero_txs  (bool,  optional)     // include zero-amount entries, default tru
 
 **Example Request**:
 ```
-GET /beneficiary?address=0x2e5eF37Ade8afb712B8Be858fEc7389Fe32857e2&start_block=14000000&end_block=15010000&max=0.1&limit=10
+GET /beneficiary?address=0x8C8D7C46219D9205f056f28fee5950aD564d7465&sblock=21100000&eblock=22100000&min=0.1
 ```
 
 ## Installation
