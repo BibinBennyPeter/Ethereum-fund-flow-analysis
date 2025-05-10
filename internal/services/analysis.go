@@ -15,6 +15,7 @@ type AnalysisService struct {
 // AnalysisParams contains parameters for the analysis
 type AnalysisParams struct {
 	Address    string
+  ChainId    int
 	StartBlock int64
 	EndBlock   int64
 	Page       int
@@ -34,6 +35,7 @@ func (s *AnalysisService) AnalyzeBeneficiaries(params AnalysisParams) ([]models.
 	// Convert to Etherscan request params
 	requestParams := client.EtherscanRequestParams{
 		Address:    params.Address,
+    ChainId:    params.ChainId,
 		StartBlock: params.StartBlock,
 		EndBlock:   params.EndBlock,
 		Page:       params.Page,

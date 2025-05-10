@@ -34,6 +34,7 @@ func NewHandler(cfg *config.Config) *Handler {
 type FilterAndSortParams struct {
 	// Etherscan API params (applied at the data source)
 	Address    string
+  ChainId    int
 	StartBlock int64
 	EndBlock   int64
 	Page       int
@@ -48,11 +49,13 @@ type FilterAndSortParams struct {
 	WithZeroTxs bool   // Include entries with zero amount transactions
 }
 
+
 // parseQueryParams extracts and validates the filter and sort parameters from the request
 func parseQueryParams(r *http.Request) (FilterAndSortParams, error) {
 	query := r.URL.Query()
 	params := FilterAndSortParams{
 		Address:     query.Get("address"),
+    ChainId:     1,          // Default to 1, Ethereum Mainnet
 		MinAmount:   0,
 		MaxAmount:   -1, // Negative value means no maximum limit
 		StartBlock:  0,
@@ -64,6 +67,19 @@ func parseQueryParams(r *http.Request) (FilterAndSortParams, error) {
 		Limit:       100,      // Default limit is 100 results
 		WithZeroTxs: true,     // By default, include zero amount transactions
 	}
+  
+  // Parse chain in
+  if chainId := query.Get("chainid"); chainId != ""{
+    chainId, err := strconv.Atoi(chainId)
+
+    if err != nil{
+      return params, err
+    }
+
+    if validateChainId(chainId){
+      params.ChainId = chainId
+    }
+  }
 
 	// Parse min amount
 	if minAmtStr := query.Get("min"); minAmtStr != "" {
@@ -175,6 +191,27 @@ func validateAddress(address string) error {
 	return nil
 }
 
+// validateChainId checks if the provided chain id is valid
+func validateChainId(chainid int) bool {
+  validChainIDs := map[int]struct{}{
+    1: {}, 11155111: {}, 17000: {}, 2741: {}, 11124: {},
+    33111: {}, 33139: {}, 42170: {}, 42161: {}, 421614: {},
+    43114: {}, 43113: {}, 8453: {}, 84532: {}, 80094: {},
+    80069: {}, 199: {}, 1028: {}, 81457: {}, 168587773: {},
+    56: {}, 97: {}, 44787: {}, 42220: {}, 25: {},
+    252: {}, 2522: {}, 100: {}, 59144: {}, 59141: {},
+    5000: {}, 5003: {}, 4352: {}, 43521: {}, 1287: {},
+    1284: {}, 1285: {}, 10: {}, 11155420: {}, 80002: {},
+    137: {}, 2442: {}, 1101: {}, 534352: {}, 534351: {},
+    57054: {}, 146: {}, 50104: {}, 531050104: {}, 1923: {},
+    1924: {}, 167009: {}, 167000: {}, 130: {}, 1301: {},
+    1111: {}, 1112: {}, 480: {}, 4801: {}, 660279: {},
+    37714555429: {}, 51: {}, 50: {}, 324: {}, 300: {},
+  }
+  _, ok := validChainIDs[chainid]
+  return ok
+}
+
 // httpHelper contains common HTTP handler operations
 type httpHelper struct{}
 
@@ -215,6 +252,7 @@ func (h httpHelper) getValidParams(w http.ResponseWriter, r *http.Request) (Filt
 func (h httpHelper) toAnalysisParams(params FilterAndSortParams) service.AnalysisParams {
 	return service.AnalysisParams{
 		Address:    params.Address,
+    ChainId:    params.ChainId,
 		StartBlock: params.StartBlock,
 		EndBlock:   params.EndBlock,
 		Page:       params.Page,

@@ -29,6 +29,7 @@ func NewClient(baseURL, apiKey string) *Client {
 // EtherscanRequestParams contains all possible parameters for Etherscan API requests
 type EtherscanRequestParams struct {
 	Address         string
+  ChainId         int
 	ContractAddress string
 	Page            int
 	Offset          int
@@ -134,8 +135,8 @@ func (c *Client) GetERC1155Transfers(params EtherscanRequestParams) ([]models.ER
 
 // buildEndpoint constructs an Etherscan API endpoint with the provided parameters
 func (c *Client) buildEndpoint(action string, params EtherscanRequestParams) string {
-	url := fmt.Sprintf("%s?chainid=1&module=account&action=%s&address=%s",
-		c.baseURL, action, params.Address)
+	url := fmt.Sprintf("%s?chainid=%d&module=account&action=%s&address=%s",
+		c.baseURL, params.ChainId,action, params.Address)
 
 	// Add optional contract address if specified (for token transfers)
 	if params.ContractAddress != "" {
