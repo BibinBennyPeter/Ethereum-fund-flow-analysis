@@ -18,7 +18,7 @@ func Load() (*Config, error) {
 
 	baseURL := os.Getenv("ETHERSCAN_BASE_URL")
 	if baseURL == "" {
-		baseURL = "http://api.etherscan.io/api" // Default API
+		baseURL = "https://api.etherscan.io/v2/api" // Default API
 	}
 
 	return &Config{
