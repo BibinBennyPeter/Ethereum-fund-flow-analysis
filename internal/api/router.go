@@ -27,9 +27,6 @@ func SetupRouter(cfg *config.Config) http.Handler {
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log the request
-		// This is a simple logger - in a production environment,
-		// you might want to use a more sophisticated logging package
-		// like Zap or Logrus
 		log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL)
 
 		// Call the next handler
