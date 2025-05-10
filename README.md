@@ -25,6 +25,7 @@ _Ethereum Fund Flow Analysis_ is a Go-based project that leverages the Etherscan
 **Common Query Parameters**:
 ```
 address        (string, required)    // target Ethereum address
+chainid        (int,   optional)     // chain ID to specify Etherscan-compatible network (e.g., 1 for Ethereum, 56 for BSC)
 sblock         (int64, optional)     // block number to start searching for transactions, default 0
 eblock         (int64, optional)     // block number to stop searching for transactions, default -1 (no limit)
 page           (int,   optional)     // default 1
