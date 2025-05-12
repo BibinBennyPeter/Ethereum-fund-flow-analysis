@@ -40,6 +40,7 @@ type FilterAndSortParams struct {
 	Page       int
 	Offset     int
 	Sort       string // "asc" or "desc" for the API call
+  ApiKey     string
 
 	// Custom filtering params (applied after fetching data)
 	MinAmount   float64
@@ -64,6 +65,7 @@ func parseQueryParams(r *http.Request) (FilterAndSortParams, error) {
 		Offset:      100,      // Default to 100 transactions per page
 		SortBy:      "amount", // Default sort by amount
 		Sort:        "desc",   // Default sort order is descending
+    ApiKey:       "",
 		Limit:       100,      // Default limit is 100 results
 		WithZeroTxs: true,     // By default, include zero amount transactions
 	}
@@ -145,6 +147,11 @@ func parseQueryParams(r *http.Request) (FilterAndSortParams, error) {
 	if sortBy := query.Get("sort_by"); sortBy != "" {
 		params.SortBy = sortBy
 	}
+
+  //Parse api key 
+  if apiKey := query.Get("apikey"); apiKey != "" {
+    params.ApiKey = apiKey
+  }
 
 	// Parse sort order
 	if sortOrder := query.Get("sort"); sortOrder != "" {
@@ -258,6 +265,7 @@ func (h httpHelper) toAnalysisParams(params FilterAndSortParams) service.Analysi
 		Page:       params.Page,
 		Offset:     params.Offset,
 		Sort:       params.Sort,
+    ApiKey:     params.ApiKey,
 	}
 }
 

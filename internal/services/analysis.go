@@ -21,6 +21,7 @@ type AnalysisParams struct {
 	Page       int
 	Offset     int
 	Sort       string
+  ApiKey     string
 }
 
 // NewAnalysisService creates a new analysis service
@@ -41,6 +42,7 @@ func (s *AnalysisService) AnalyzeBeneficiaries(params AnalysisParams) ([]models.
 		Page:       params.Page,
 		Offset:     params.Offset,
 		Sort:       params.Sort,
+    ApiKey:     params.ApiKey,
 	}
 
 	// Fetch all transactions concurrently
@@ -75,6 +77,7 @@ func (s *AnalysisService) AnalyzePayers(params AnalysisParams) ([]models.Payer, 
 		Page:       params.Page,
 		Offset:     params.Offset,
 		Sort:       params.Sort,
+    ApiKey:     params.ApiKey,
 	}
 
 	// Fetch all transactions concurrently

@@ -36,6 +36,7 @@ type EtherscanRequestParams struct {
 	StartBlock      int64
 	EndBlock        int64
 	Sort            string // "asc" or "desc"
+  ApiKey          string
 }
 
 // GetNormalTransactions fetches normal transactions for the given address
@@ -170,16 +171,23 @@ func (c *Client) buildEndpoint(action string, params EtherscanRequestParams) str
 	if sort == "" {
 		sort = "asc" // Default sort order
 	}
+
 	url += fmt.Sprintf("&sort=%s", sort)
 
 	// Add API key
-	url += fmt.Sprintf("&apikey=%s", c.apiKey)
+  if params.ApiKey == "" && c.apiKey != "" {
+    url += fmt.Sprintf("&apikey=%s", c.apiKey)
+  }
+  if params.ApiKey != "" {
+    url += fmt.Sprintf("&apikey=%s", params.ApiKey)
+  }
 
 	return url
 }
 
 // makeRequest makes an HTTP request to the Etherscan API
 func (c *Client) makeRequest(endpoint string, v interface{}) error {
+
 	resp, err := c.httpClient.Get(endpoint)
 	if err != nil {
 		return fmt.Errorf("error making request: %w", err)

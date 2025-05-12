@@ -35,6 +35,7 @@ min            (float, optional)     // minimum tx amount, default 0
 max            (float, optional)     // maximum tx amount, default -1 (no limit)
 limit          (int,   optional)     // max number of final results, default 100
 with_zero_txs  (bool,  optional)     // include zero-amount entries, default true
+apikey (string, optional)    // override the default Etherscan API key; if empty, falls back to ETHERSCAN_API_KEY from the environment
 ```
 
 **Example Request**:
